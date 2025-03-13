@@ -15,7 +15,7 @@ Hosted by [Alloy Digital](https://alloy.digital/) and [Deploy](https://deployall
 **Code Clash – The AI Showdown** was a lightning-fast coding challenge that explored how AI could enhance or replace traditional development workflows. Participants had **10 minutes** to create a functional predictor for the **2025 SEC Men’s Basketball Tournament**. They could use any language, framework, or tool—including AI-assisted coding tools.
 
 
-For the full rules of the challenge, please see the [PDF of the challenge details](./TECHS%20AND%20THE%20CITY%20PRESENTS_%20Code%20Clash%20-%20The%20AI%20Showdown.pdf).
+For the full rules of the challenge, please see the [PDF of the challenge details](./TECHS%20AND%20THE%20CITY%20PRESENTS_%20%20Code%20Clash%20-%20The%20AI%20Showdown.pdf).
 
 ---
 
