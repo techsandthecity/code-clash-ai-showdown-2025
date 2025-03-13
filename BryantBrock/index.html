@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SEC Tournament Tracker</title>
+    <style>
+      body {
+        background: linear-gradient(135deg, #0d2e4c, #1a1a1a);
+        color: #fff;
+        font-family: "Arial", sans-serif;
+        margin: 0;
+        padding: 20px;
+        min-height: 100vh;
+      }
+
+      h1 {
+        text-align: center;
+        font-size: 3em;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        margin-bottom: 30px;
+        color: #f8f8f8;
+      }
+
+      .tournament-container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .round {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-bottom: 40px;
+      }
+
+      .round-title {
+        width: 100%;
+        text-align: center;
+        font-size: 1.5em;
+        margin-bottom: 15px;
+        color: #4caf50;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+      }
+
+      .game-card {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 15px;
+        padding-bottom: 30px;
+        margin: 10px;
+        width: 280px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .game-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+      }
+
+      .game-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, #4caf50, #ffc107);
+      }
+
+      .game-number {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8em;
+      }
+
+      .matchup {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .team {
+        padding: 8px;
+        border-radius: 5px;
+        width: 48%;
+        text-align: center;
+      }
+
+      .team-name {
+        font-weight: bold;
+        font-size: 0.9em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .team-seed {
+        font-size: 0.7em;
+        opacity: 0.7;
+      }
+
+      .winner {
+        background: rgba(76, 175, 80, 0.2);
+        border: 1px solid rgba(76, 175, 80, 0.5);
+      }
+
+      .loser {
+        opacity: 0.7;
+      }
+
+      .result {
+        text-align: center;
+        margin-top: 10px;
+      }
+
+      .spread {
+        display: inline-block;
+        background: rgba(255, 193, 7, 0.2);
+        border-radius: 12px;
+        padding: 3px 8px;
+        font-size: 0.8em;
+        color: #ffc107;
+      }
+
+      .shortest-player-icon {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        background-color: #ff6b6b;
+        border-radius: 50%;
+        margin-right: 5px;
+        vertical-align: middle;
+      }
+
+      .shortest-player-note {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        font-size: 0.7em;
+        color: #ff6b6b;
+      }
+
+      .controls {
+        text-align: center;
+        margin: 20px 0 40px;
+      }
+
+      button {
+        background: linear-gradient(135deg, #4caf50, #2e7d32);
+        color: white;
+        border: none;
+        border-radius: 30px;
+        padding: 12px 25px;
+        font-size: 1.1em;
+        cursor: pointer;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+      }
+
+      button:active {
+        transform: translateY(1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      @media (max-width: 768px) {
+        .game-card {
+          width: calc(100% - 20px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>SEC Tournament Bracket</h1>
+
+    <div class="controls">
+      <button id="generate-btn">Simulate Tournament</button>
+    </div>
+
+    <div class="tournament-container" id="tournament-container"></div>
+
+    <script>
+      // Team statistics based on 2024-2025 season data
+      const teamStats = {
+        "No. 1 Auburn": {
+          seed: 1,
+          name: "Auburn",
+          winPct: 0.9,
+          netRank: 2,
+          streak: "1 Loss",
+          last10: "8-2",
+          shortestPlayer: { name: "Lior Berman", height: "6'2\"" },
+        },
+        "No. 2 Florida": {
+          seed: 2,
+          name: "Florida",
+          winPct: 0.867,
+          netRank: 4,
+          streak: "2 Wins",
+          last10: "8-2",
+          shortestPlayer: { name: "Julian Rishwain", height: "6'5\"" },
+        },
+        "No. 3 Alabama": {
+          seed: 3,
+          name: "Alabama",
+          winPct: 0.767,
+          netRank: 6,
+          streak: "2 Losses",
+          last10: "6-4",
+          shortestPlayer: { name: "Rylan Griffen", height: "6'6\"" },
+        },
+        "No. 4 Tennessee": {
+          seed: 4,
+          name: "Tennessee",
+          winPct: 0.8,
+          netRank: 5,
+          streak: "1 Loss",
+          last10: "7-3",
+          shortestPlayer: { name: "Zakai Zeigler", height: "5'9\"" },
+        },
+        "No. 5 Texas A&M": {
+          seed: 5,
+          name: "Texas A&M",
+          winPct: 0.7,
+          netRank: 20,
+          streak: "1 Win",
+          last10: "6-4",
+          shortestPlayer: { name: "Jaelyn Lee", height: "5'11\"" },
+        },
+        "No. 6 Kentucky": {
+          seed: 6,
+          name: "Kentucky",
+          winPct: 0.667,
+          netRank: 13,
+          streak: "1 Win",
+          last10: "5-5",
+          shortestPlayer: { name: "Rob Dillingham", height: "6'1\"" },
+        },
+        "No. 7 Missouri": {
+          seed: 7,
+          name: "Missouri",
+          winPct: 0.7,
+          netRank: 17,
+          streak: "2 Losses",
+          last10: "5-5",
+          shortestPlayer: { name: "Nick Honor", height: "5'10\"" },
+        },
+        "No. 8 Ole Miss": {
+          seed: 8,
+          name: "Ole Miss",
+          winPct: 0.7,
+          netRank: 27,
+          streak: "2 Wins",
+          last10: "6-4",
+          shortestPlayer: { name: "Cam Brent", height: "5'4\"" },
+        },
+        "No. 9 Arkansas": {
+          seed: 9,
+          name: "Arkansas",
+          winPct: 0.6,
+          netRank: 40,
+          streak: "1 Win",
+          last10: "6-4",
+          shortestPlayer: { name: "Denijay Harris", height: "6'6\"" },
+        },
+        "No. 10 Mississippi State": {
+          seed: 10,
+          name: "Mississippi St",
+          winPct: 0.667,
+          netRank: 33,
+          streak: "1 Loss",
+          last10: "4-6",
+          shortestPlayer: { name: "Josh Hubbard", height: "5'10\"" },
+        },
+        "No. 11 Georgia": {
+          seed: 11,
+          name: "Georgia",
+          winPct: 0.633,
+          netRank: 32,
+          streak: "3 Wins",
+          last10: "5-5",
+          shortestPlayer: { name: "Jabri Abdur-Rahim", height: "6'7\"" },
+        },
+        "No. 12 Vanderbilt": {
+          seed: 12,
+          name: "Vanderbilt",
+          winPct: 0.667,
+          netRank: 43,
+          streak: "1 Loss",
+          last10: "4-6",
+          shortestPlayer: { name: "Miles Keeffe", height: "6'0\"" },
+        },
+        "No. 13 Texas": {
+          seed: 13,
+          name: "Texas",
+          winPct: 0.567,
+          netRank: 39,
+          streak: "1 Win",
+          last10: "3-7",
+          shortestPlayer: { name: "Max Abmas", height: "5'11\"" },
+        },
+        "No. 14 Oklahoma": {
+          seed: 14,
+          name: "Oklahoma",
+          winPct: 0.6,
+          netRank: 50,
+          streak: "1 Win",
+          last10: "3-7",
+          shortestPlayer: { name: "Milos Uzan", height: "6'4\"" },
+        },
+        "No. 15 LSU": {
+          seed: 15,
+          name: "LSU",
+          winPct: 0.467,
+          netRank: 84,
+          streak: "4 Losses",
+          last10: "2-8",
+          shortestPlayer: { name: "Jordan Wright", height: "6'5\"" },
+        },
+        "No. 16 South Carolina": {
+          seed: 16,
+          name: "South Carolina",
+          winPct: 0.4,
+          netRank: 88,
+          streak: "1 Loss",
+          last10: "2-8",
+          shortestPlayer: { name: "Meechie Johnson Jr.", height: "6'1\"" },
+        },
+      };
+
+      const tournamentData = [
+        {
+          gameNumber: 1,
+          round: "First Round",
+          team1: "No. 16 South Carolina",
+          team2: "No. 9 Arkansas",
+        },
+        {
+          gameNumber: 2,
+          round: "First Round",
+          team1: "No. 13 Texas",
+          team2: "No. 12 Vanderbilt",
+        },
+        {
+          gameNumber: 3,
+          round: "First Round",
+          team1: "No. 15 LSU",
+          team2: "No. 10 Mississippi State",
+        },
+        {
+          gameNumber: 4,
+          round: "First Round",
+          team1: "No. 14 Oklahoma",
+          team2: "No. 11 Georgia",
+        },
+        {
+          gameNumber: 5,
+          round: "Second Round",
+          team1: null,
+          team2: "No. 8 Ole Miss",
+        },
+        {
+          gameNumber: 6,
+          round: "Second Round",
+          team1: null,
+          team2: "No. 5 Texas A&M",
+        },
+        {
+          gameNumber: 7,
+          round: "Second Round",
+          team1: null,
+          team2: "No. 7 Missouri",
+        },
+        {
+          gameNumber: 8,
+          round: "Second Round",
+          team1: null,
+          team2: "No. 6 Kentucky",
+        },
+        {
+          gameNumber: 9,
+          round: "Quarterfinals",
+          team1: null,
+          team2: "No. 1 Auburn",
+        },
+        {
+          gameNumber: 10,
+          round: "Quarterfinals",
+          team1: null,
+          team2: "No. 4 Tennessee",
+        },
+        {
+          gameNumber: 11,
+          round: "Quarterfinals",
+          team1: null,
+          team2: "No. 2 Florida",
+        },
+        {
+          gameNumber: 12,
+          round: "Quarterfinals",
+          team1: null,
+          team2: "No. 3 Alabama",
+        },
+        {
+          gameNumber: 13,
+          round: "Semifinals",
+          team1: null,
+          team2: null,
+        },
+        {
+          gameNumber: 14,
+          round: "Semifinals",
+          team1: null,
+          team2: null,
+        },
+        {
+          gameNumber: 15,
+          round: "Championship",
+          team1: null,
+          team2: null,
+        },
+      ];
+
+      function generateSpread() {
+        return Math.round((Math.random() * 14 + 1) * 10) / 10;
+      }
+
+      function getHeightInInches(heightStr) {
+        if (!heightStr) return 72; // Default to 6'0"
+        const parts = heightStr.split("'");
+        const feet = parseInt(parts[0]);
+        const inches = parseInt(parts[1]) || 0;
+        return feet * 12 + inches;
+      }
+
+      function calculateWinProbability(team1, team2) {
+        if (!teamStats[team1] || !teamStats[team2]) return 0.5;
+
+        // Calculate win probability based on NET ranking and win percentage
+        const netRankDiff = teamStats[team2].netRank - teamStats[team1].netRank;
+        const winPctDiff = teamStats[team1].winPct - teamStats[team2].winPct;
+
+        // Convert last10 to win percentage
+        const last10Team1 =
+          parseFloat(teamStats[team1].last10.split("-")[0]) / 10;
+        const last10Team2 =
+          parseFloat(teamStats[team2].last10.split("-")[0]) / 10;
+        const last10Diff = last10Team1 - last10Team2;
+
+        // Streak factor
+        const streak1 = teamStats[team1].streak.includes("Win") ? 0.05 : -0.05;
+        const streak2 = teamStats[team2].streak.includes("Win") ? 0.05 : -0.05;
+        const streakDiff = streak1 - streak2;
+
+        // Shortest player factor - teams with shorter players get a small boost
+        const height1 = getHeightInInches(
+          teamStats[team1].shortestPlayer?.height
+        );
+        const height2 = getHeightInInches(
+          teamStats[team2].shortestPlayer?.height
+        );
+
+        // If a team has a player under 5'8" (68 inches), give them a special boost
+        let shortestPlayerBoost = 0;
+        if (height1 < 68) {
+          shortestPlayerBoost += 0.08;
+        } else if (height1 < 70) {
+          shortestPlayerBoost += 0.05;
+        }
+
+        if (height2 < 68) {
+          shortestPlayerBoost -= 0.08;
+        } else if (height2 < 70) {
+          shortestPlayerBoost -= 0.05;
+        }
+
+        // Ole Miss gets a special boost for having Cam Brent at 5'4"
+        if (team1.includes("Ole Miss")) {
+          shortestPlayerBoost += 0.1;
+        } else if (team2.includes("Ole Miss")) {
+          shortestPlayerBoost -= 0.1;
+        }
+
+        // Calculate base probability with weights
+        let probability =
+          0.5 +
+          netRankDiff * 0.002 +
+          winPctDiff * 0.3 +
+          last10Diff * 0.15 +
+          streakDiff +
+          shortestPlayerBoost;
+
+        // Ensure probability is between 0.1 and 0.9
+        return Math.max(0.1, Math.min(0.9, probability));
+      }
+
+      function updateTournament() {
+        const results = {};
+
+        tournamentData.forEach((game) => {
+          const gameNum = game.gameNumber;
+          let team1 = game.team1;
+          let team2 = game.team2;
+
+          // First round games
+          if (team1?.includes("No.") && team2?.includes("No.")) {
+            const winProbability = calculateWinProbability(team1, team2);
+            const spread = generateSpread();
+            const winner = Math.random() < winProbability ? team1 : team2;
+            results[gameNum] = {
+              winner,
+              spread,
+              team1,
+              team2,
+              round: game.round,
+              winProbability:
+                winner === team1 ? winProbability : 1 - winProbability,
+            };
+          }
+          // Subsequent rounds
+          else {
+            if (gameNum > 4) {
+              const prevWinner =
+                gameNum <= 8
+                  ? results[gameNum - 4]?.winner
+                  : gameNum <= 12
+                  ? results[gameNum - 4]?.winner
+                  : gameNum <= 14
+                  ? results[gameNum - 4]?.winner
+                  : results[gameNum - 2]?.winner;
+
+              if (prevWinner) {
+                const winProbability = calculateWinProbability(
+                  prevWinner,
+                  team2
+                );
+                const spread = generateSpread();
+                const winner =
+                  Math.random() < winProbability ? prevWinner : team2;
+                results[gameNum] = {
+                  winner,
+                  spread,
+                  team1: prevWinner,
+                  team2,
+                  round: game.round,
+                  winProbability:
+                    winner === prevWinner ? winProbability : 1 - winProbability,
+                };
+              }
+            }
+          }
+        });
+
+        return results;
+      }
+
+      function displayResults(results) {
+        const container = document.getElementById("tournament-container");
+        container.innerHTML = "";
+
+        // Group games by round
+        const rounds = {};
+        Object.values(results).forEach((result) => {
+          if (!rounds[result.round]) {
+            rounds[result.round] = [];
+          }
+          rounds[result.round].push(result);
+        });
+
+        // Display each round
+        Object.entries(rounds).forEach(([roundName, games]) => {
+          const roundDiv = document.createElement("div");
+          roundDiv.className = "round";
+
+          const roundTitle = document.createElement("div");
+          roundTitle.className = "round-title";
+          roundTitle.textContent = roundName;
+          roundDiv.appendChild(roundTitle);
+
+          games.forEach((game) => {
+            const gameCard = document.createElement("div");
+            gameCard.className = "game-card";
+
+            const gameNumber = document.createElement("div");
+            gameNumber.className = "game-number";
+            gameNumber.textContent = game.gameNumber;
+            gameCard.appendChild(gameNumber);
+
+            const matchup = document.createElement("div");
+            matchup.className = "matchup";
+
+            // Team 1
+            const team1Div = document.createElement("div");
+            team1Div.className = `team ${
+              game.winner === game.team1 ? "winner" : "loser"
+            }`;
+
+            const team1Name = document.createElement("div");
+            team1Name.className = "team-name";
+            team1Name.textContent = teamStats[game.team1]?.name || "TBD";
+
+            const team1Seed = document.createElement("div");
+            team1Seed.className = "team-seed";
+            team1Seed.textContent = `#${teamStats[game.team1]?.seed || "?"}`;
+
+            team1Div.appendChild(team1Name);
+            team1Div.appendChild(team1Seed);
+
+            // Team 2
+            const team2Div = document.createElement("div");
+            team2Div.className = `team ${
+              game.winner === game.team2 ? "winner" : "loser"
+            }`;
+
+            const team2Name = document.createElement("div");
+            team2Name.className = "team-name";
+            team2Name.textContent = teamStats[game.team2]?.name || "TBD";
+
+            const team2Seed = document.createElement("div");
+            team2Seed.className = "team-seed";
+            team2Seed.textContent = `#${teamStats[game.team2]?.seed || "?"}`;
+
+            team2Div.appendChild(team2Name);
+            team2Div.appendChild(team2Seed);
+
+            matchup.appendChild(team1Div);
+            matchup.appendChild(team2Div);
+            gameCard.appendChild(matchup);
+
+            // Result
+            const result = document.createElement("div");
+            result.className = "result";
+
+            const winnerName = teamStats[game.winner]?.name || "TBD";
+            const winnerSeed = teamStats[game.winner]?.seed || "?";
+
+            result.innerHTML = `
+              <div>Winner: ${winnerName} (#${winnerSeed})</div>
+              <div class="spread">Spread: ${game.spread} pts</div>
+            `;
+            gameCard.appendChild(result);
+
+            // Shortest player note
+            const team1Height = getHeightInInches(
+              teamStats[game.team1]?.shortestPlayer?.height
+            );
+            const team2Height = getHeightInInches(
+              teamStats[game.team2]?.shortestPlayer?.height
+            );
+
+            if (
+              team1Height < 68 ||
+              team2Height < 68 ||
+              game.team1?.includes("Ole Miss") ||
+              game.team2?.includes("Ole Miss")
+            ) {
+              const shortestNote = document.createElement("div");
+              shortestNote.className = "shortest-player-note";
+
+              if (
+                game.team1?.includes("Ole Miss") ||
+                game.team2?.includes("Ole Miss")
+              ) {
+                shortestNote.innerHTML =
+                  '<span class="shortest-player-icon"></span> Ole Miss has 5\'4" Cam Brent';
+              } else if (team1Height < 68) {
+                shortestNote.innerHTML = `<span class="shortest-player-icon"></span> ${
+                  teamStats[game.team1]?.shortestPlayer?.name
+                } (${teamStats[game.team1]?.shortestPlayer?.height})`;
+              } else if (team2Height < 68) {
+                shortestNote.innerHTML = `<span class="shortest-player-icon"></span> ${
+                  teamStats[game.team2]?.shortestPlayer?.name
+                } (${teamStats[game.team2]?.shortestPlayer?.height})`;
+              }
+
+              gameCard.appendChild(shortestNote);
+            }
+
+            roundDiv.appendChild(gameCard);
+          });
+
+          container.appendChild(roundDiv);
+        });
+      }
+
+      // Generate and display results when button is clicked
+      document.getElementById("generate-btn").addEventListener("click", () => {
+        const results = updateTournament();
+        displayResults(results);
+      });
+
+      // Initial simulation
+      const initialResults = updateTournament();
+      displayResults(initialResults);
+    </script>
+  </body>
+</html>
