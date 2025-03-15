@@ -1,0 +1,15 @@
+Round,Game,Team1,Team2,Winner
+1,1,Alabama,Arkansas,Alabama
+1,2,Auburn,Florida,Auburn
+1,3,Georgia,Kentucky,Georgia
+1,4,LSU,Mississippi State,LSU
+1,5,Missouri,Ole Miss,Missouri
+1,6,South Carolina,Tennessee,Tennessee
+1,7,Texas A&M,Vanderbilt,Texas A&M
+2,8,Alabama,Auburn,Alabama
+2,9,Georgia,LSU,LSU
+2,10,Missouri,Tennessee,Missouri
+2,11,Texas A&M,Alabama,
+3,12,LSU,Missouri,LSU
+3,13,,LSU,
+4,14,,,
